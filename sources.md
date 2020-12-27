@@ -97,3 +97,4 @@ A produit plusieurs papiers intéressants pour le calcul d'itinéraires sur PTN,
 - https://www.sciencedirect.com/journal/transportation-research-part-a-policy-and-practice
 - [publications de la chaire "Algorithmes et structures de données de l'université de Freiburg](https://ad.informatik.uni-freiburg.de/publications)
 - [publications du groupe de recherche Next-Generation Route Planning](https://ad.informatik.uni-freiburg.de/projects/google-focused-research-award-next-generation-route-planning)
+- [challenges DIMACS](http://dimacs.rutgers.edu/programs/challenge/), et particulièrement le [9ième challenge de 2005/2006](http://users.diag.uniroma1.it/challenge9/), centré sur le Shortest Path Problem
