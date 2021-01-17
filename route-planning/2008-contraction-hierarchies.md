@@ -4,10 +4,10 @@
 - **source** = [WEA 2008](https://dl.acm.org/doi/proceedings/10.5555/1788888)
 - **auteurs** = Robert GEISBERGER (dont c'est la thèse), Peter SANDERS, Dominik SCHULTES, and Daniel DELLING / KIT
 - **date de publication** = 2008
-- **date de rédaction initiale de ces notes** = juin 2020
+- **date de rédaction initiale de ces notes** = juin 2020 (possiblement, notes plus anciennes dans le tas)
 
 
-## Notes synthétique
+## Notes synthétiques
 
 Le travail de synthèse reste à faire : je me suis contenté de déplacer mes notes vrac de l'éqpoque à cet emplacement.
 
