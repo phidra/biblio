@@ -73,3 +73,48 @@ Nested dissection :
 - Pour un ordering calculé utilisant les nested dissection, la contrainte suivante est toujours vraie = les noeuds de coupe ont un ordre supérieur à tout noeud des deux moitiés coupées.
 
 TODO = tracer la courbe du degré d'un node en fonction de son index d'ordering (pour vérifier visuellement que les derniers noeuds ont une quantité d'edges faramineuse).
+
+
+Notes vrac sur WCH, issues des divers papiers :
+- Notion de lower triangle à creuser.
+- Typiquement, pour les Contraction Hierarchies, les nœuds contractés à la fin génèrent beaucoup de shortcuts (à cause des shortcuts déjà créés).
+- La contraction converge FORCÉMENT, puisqu'on contracte un set fini de nœuds. Par contre, le temps de convergence peut devenir exponentiel si l'ordering est mauvais.
+    + en effet, plus on avance dans la contraction, plus les noeuds seront adjacents à ÉNORMÉMENT d'edges, vu qu'on leur aura ajouté beaucoup de raccourcis
+    + du coup, la contraction des noeuds avancés (et la recherche des witness-paths) prendra beaucoup de temps -> le temps de contraction divergera
+- Witness path = PCC ne passant pas par le nœud en cours de contraction v, très utile car il "témoigne" qu'il n'y a pas besoin d'ajouter un shortcut pour le triplet (u,v,w)
+- Search space :
+    + Chaque nœud source s a un graphe G↑(s) constitué des chemins upwards partant de s.
+    + Chaque nœud target t a un graphe G↓(t) constitué des chemins downwards arrivant à t.
+    + L'intérêt des CH, c'est que ces graphes sont beaucoup plus petits que le graphe G original, et donc que le dijkstra bidirectionnel est beaucoup plus rapide.
+    + Le search Space d'un node est le subgraph de G' (G' étant le supergraphe contenant les edges originaux + les shortcuts) accessible depuis z en ne suivant que les arcs upward : G↑
+
+
+PAS CLAIR : pourquoi faut-il que N soit le noeud d'ordre le moins fort de ses voisins ET DES VOISINS DE SES VOISINS ?
+- EDIT : parce qu'on va mettre à jour son cost deux fois, et donc qu'on peut le contracter deux fois
+- dit autrement : en quoi le fait de d'impacter deux fois N1 est-il gênant ?
+- NOTE : un commentaire dans le code de RE indique que c'est pour éviter de créer deux fois le même raccourci, mais je ne comprends toujours pas...
+- l'article Minimum Time-Dependent Travel Times with Contraction Hierarchies donne des indications sur le sujet :
+
+Page 14-15 :
+
+> The gap between the nodes in J is at least three hops instead of two hops, as in the case of I. The reason for this difference is explained at the end of this section in the paragraph about parallelization.
+
+Page 16 : Parallelization.
+
+> Like the contraction of the nodes in a set I as defined by Equation (1), the contraction of the nodes in a set J, as characterized by Property (2), can be performed in parallel quite naturally for shared memory architectures. Also, the simulated contractions of the adjacent nodes can be performed in parallel. But, if simulations are performed in parallel, the following question arises: Is it possible that two threads both simulate the contraction of the same node? This would be redundant work. But this can never happen because of the 3-hop gap between the nodes in an independent node set J as characterized by Property (2).
+
+Du coup j'ai la réponse :
+-  il faut recalculer les cost de tous les nodes qui se sont vus ajoutés des edges, qu'on appelle des "impacted" nodes (en effet, dans mon graphe, comme on a retenu N0 comme indépendant et qu'on va le contracter, N1 va se manger un nouveau shortcut)
+-  pour calculer le cost d'un node, on simule sa contraction
+-  du coup, on va potentiellement simuler la contraction de tout voisin d'un node considéré comme indépendant
+-  dans le cas de mon graphe sur papier, si je me suis contenté de prendre des 1-hop independent nodes, N1 est voisin à la fois de N0 et N2
+-  son coût va donc être mis à jour deux fois, i.e. on va simuler sa contraction deux fois
+-  D'où le commentaire "The goal is to avoid creating the same shortcut twice."
+
+Un "théorème" important (= plutôt un point clé à comprendre), sur l'impact du fait de contracter un node :
+- lorsqu'on appelle get_node_cost (qui s'exécute en parallèle), on dit "calcule moi le cost de chaque noeud, EN L'ÉTAT ACTUEL DU GRAPHE"
+- d'après le paragraphe ci-dessus, ce cost calculé pour un node N ne changera pas tant qu'il n'y aura pas de nouveaux edges ajoutés/supprimés à N
+- en cas de modification du graphe, le cost calculé ne changera QUE pour les noeuds qui auront eu de nouveaux edges ajoutés / supprimés
+- de plus, la contraction d'un noeud n'ajoute/supprime des edges QU'AUX NOEUDS voisins d'un node contracté
+- dit autrement : le cost calculé n'est modifié (suite à une passe de contraction) QUE pour les noeuds voisins des noeuds contractés
+- (ce qui explique qu'on recalcule le cost des nodes voisins des noeuds contractés)
