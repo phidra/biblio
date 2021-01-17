@@ -41,6 +41,25 @@ NdM = pourquoi est-ce important de répartir la contraction uniformément ?
     + alors on est sûr que le meeting point se trouvera au nord
     + et si on veut faire un trajet du sud au nord, le dijkstra qui part du sud devra explorer toute la France pour trouver son meeting-point au nord
 
+Après seconde lecture de l'article, ce qui ne reste pas clair :
+- différence entre limiter le searchSpaceSize et limiter le nombre de hops
+- implémentation du dijkstra pour choisir si on ajoute un shortcut, notamment comment utiliser la limite max
+- le stall-on-demand
+
+Sans doute que la lecture de la thèse aiderait...
+
+Au sujet de la difficulté à trouver un bon ordering, la [thèse WCH](https://i11www.iti.kit.edu/_media/teaching/theses/weak_ch_work-1.pdf) donne des références sur le sujet :
+- But finding an order which minimizes theamount of added shortcuts is known to beNP-hard [BCK+10]
+    + Reinhard Bauer, Tobias Columbus, Bastian Katz, Marcus Krug, and DorotheaWagner.
+    + Preprocessing Speed-Up Techniques is Hard.
+    + In Proceedings of the 7thConference on Algorithms and Complexity (CIAC’10), volume 6078 ofLectureNotes in Computer Science, pages 359–370. Springer, 2010.
+
+Par ailleurs, concernant le preuve que CH accélère les queries en limitant le search space size, la même thèse donne des références :
+- In [BCRW13,Col12], a theoretical framework to study Contraction Hierarchies was developed. It enables proving upper bounds on the search space size for certain classes of graphs
+    + Reinhard Bauer, Tobias Columbus, Ignaz Rutter, and Dorothea Wagner.
+    + Search-Space Size in Contraction Hierarchies.
+    + In Proceedings of the 40th Inter-national Colloquium on Automata, Languages, and Programming (ICALP’13),volume 7965 ofLecture Notes in Computer Science, pages 93–104. Springer,2013.
+
 ### Copie de mes notes manuscrites (à trier puis merger avec les autres notes)
 
 Heuristique de contraction :
@@ -188,3 +207,22 @@ QUESTION : je ne comprends pas bien pourquoi on peut limiter le coût max du dij
     4.  (v,w) a le coût le plus PETIT des successeurs de v  ET  (v,w) a le coût le plus GRAND des prédécesseurs de w
 
 Mmmmh, non, décidément, c'est pas clair...
+
+> When reaching a node x, we scan its bucket entries. For each entry (C,w), we can infer that there is a path from u to w of length d(u,x)+C.
+
+- pour chaque node x atteint dans le dijktra, on sait qu'on peut atteindre w en d(u,x) + c(x,w)
+- ce dernier terme c(x,w) est déjà dans la bucket-list
+
+> Since exact shortest path search for contraction can be rather expensive, we have implemented two ways to limit the range of searches: We can limit the number of hops (edges) used in any path〈u,...,w〉, and we can limit the total search space size of a forward search
+
+- mon interprétation de "limiter le total search space size" = on limite le nombre de NOEUDS possibles dans la recherche du plus court chemin (on arrête d'explorer quand on a exploré Nmax noeuds)
+- mon interprétation de "limiter le nombre de hops" = on limite le nombre d'EDGES possibles dans un plus court chemin (on arrête d'explorer quand un chemin contient Emax edges)
+- QUESTION = mais tel que l'article le présente, limiter le nombre de hops = limiter le nombre d'edges dans le chemin ? Du coup quelle différence avec limiter le search space ? Dans le code RE, on dirait que nombre de hops == search space size...
+- Dans le code RE :
+    + le dijkstra est limité par un coût max "cutoff"
+    + numHops est le nombre d'edge (possiblement contractés, si je dis pas de bêtises) entre le noeud source et le noeud actuellement exploré
+    + le searchSpace est le nombre max d'hops effectués par le dijkstra
+    + le maxSearchSpace d'un node v en cours de contraction est le searchSpace maximal sur tous les chemins calculés entre u=un prédécesseur de v et w=un successeur de v
+    + pour un node en cours de contraction donné, le maxSearchSpace est utilisé pour calculer l'heuristique d'ordering (s'il est grand, le noeud aura un "coût" d'ordering un peu plus grand) ; au même titre que l'edgeDiff, qui compte d'ailleurs 100 fois plus que le maxSearchSpace
+
+Apparemment, leur implémentation "hop" s'inspire [de ça](http://algo2.iti.kit.edu/documents/routeplanning/distTable.pdf) (à regarder ?)
