@@ -49,7 +49,7 @@ Après seconde lecture de l'article, ce qui ne reste pas clair :
 Sans doute que la lecture de la thèse aiderait...
 
 Au sujet de la difficulté à trouver un bon ordering, la [thèse WCH](https://i11www.iti.kit.edu/_media/teaching/theses/weak_ch_work-1.pdf) donne des références sur le sujet :
-- But finding an order which minimizes theamount of added shortcuts is known to beNP-hard [BCK+10]
+- But finding an order which minimizes the amount of added shortcuts is known to be NP-hard [BCK+10]
     + Reinhard Bauer, Tobias Columbus, Bastian Katz, Marcus Krug, and DorotheaWagner.
     + Preprocessing Speed-Up Techniques is Hard.
     + In Proceedings of the 7thConference on Algorithms and Complexity (CIAC’10), volume 6078 ofLectureNotes in Computer Science, pages 359–370. Springer, 2010.
