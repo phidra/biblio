@@ -16,7 +16,7 @@
 * à noter que l'algo a depuis été accéléré en donnant naissance à [InertialFlowCutter](https://arxiv.org/pdf/1906.11811.pdf), qui semble spécifiquement adapté à CCH (combinaison de FlowCutter et de [IntertialFlow](https://link.springer.com/chapter/10.1007/978-3-319-20086-6_22))
 * de plus, [d'autres algos plus récents](https://drops.dagstuhl.de/opus/volltexte/2019/11173/) existent et semble encore mieux
 
-# Transfertt de mes notes brutes
+# Transfert de mes notes brutes
 
 * Deux notions proches quand on parle de partitioning de graphe :
     - graph cut (la frontière est un set d'edges)
