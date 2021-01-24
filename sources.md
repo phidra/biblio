@@ -100,3 +100,5 @@ A produit plusieurs papiers intéressants pour le calcul d'itinéraires sur PTN,
 - [challenges DIMACS](http://dimacs.rutgers.edu/programs/challenge/), et particulièrement le [9ième challenge de 2005/2006](http://users.diag.uniroma1.it/challenge9/), centré sur le Shortest Path Problem
 - [le repo github du KIT](https://github.com/kit-algo)
 - [projet multimod de l'INRIA](https://project.inria.fr/multimod/)
+- [la page du KIT sur le route-planning](http://algo2.iti.kit.edu/routeplanning.php), avec notamment des implémentations open-source
+- [les cours d'Hannah BAST](https://ad-wiki.informatik.uni-freiburg.de/teaching/EfficientRoutePlanningSS2011) donnés en 2011 à l'université de Freiburg sur le route-planning
