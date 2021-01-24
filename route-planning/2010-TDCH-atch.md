@@ -280,3 +280,47 @@ Comme les raccourcis ont été expanded, le corridor ne contient que des edges o
 On peut donc faire un TD-dijkstra bidirectionnel "normal" (ne visitant que les edges du corridor)  utilisant ces TTFs exactes pour trouver l'earliest arrival \o/
 
 À noter que les phase 2 et 3 sont en quelque sorte optionnelles, mais servent à réduire les edges potentiellement intéressants entre les différents c et t
+
+### Vrac
+
+Je laisse de côté les requêtes de type TTP (TimeTravelProfile = pour un couple {s,t} donné, l'heure d'arrivée pour chaque heure de départ possible)
+
+**Inexact earliest arrival** : en gros, on va approximer les TTF (même originales !) par une Approximated-TTF de la moins grande complexité possible, qui est toujours à ε de la vraie TTF. Idem, je laisse ça de côté.
+
+QUESTION : stall-on-demand toujours pas clair.
+
+## Section 4 = Experiments
+
+### paramètres 
+
+Deux sets de données :
+* Germany = ~5M nodes ~10M edges, environ 8% d'edges avec des speed-profiles
+* Europe = ~20Mnodes ~40M edges, la plupart des edges ont des SP
+
+Ils laissent de côté l'affichage du chemin le plus court (ils ne s'intéressent qu'à l'heure d'arrivée).
+
+Ils comparent l'occupation de RAM à celle nécessaire pour faire un TD-dijkstra sans approximation :
+* Germany = 95 byte / node
+* Europe = 76 byte / node
+
+1000 couples source+target random, τ0 random aussi
+
+Ils monitorent également des métriques sur la performance du dijkstra : nombre d'edges "relaxés", nombre d'évaluation de TTF, etc.
+
+Leur référence est un TD-disjktra "exhaustif" (i.e. hors ATCH, voire hors TCH ?)
+
+### un point intéressant de l'analyse des algos :
+
+* ils classent les requêtes en fonction du nombre de noeuds settled par le dijkstra
+* c'est une mesure de la "complexité" de la requête
+* si source et target sont TRÈS éloignés l'un de l'autre, le dijkstra va avoir tendance à explorer et settle beaucoup de noeuds
+* (c'est utilisé dans pas mal de leurs autres papiers)
+
+### principales conclusions :
+
+* dans l'idée avec ATCH, on gagne en espace, mais on perd en performances au runtime
+* en pratique, avec ε suffisamment petit, il n'y a pas de ralentissement au runtime
+* c'est donc un tradeoff RAM / runtime
+* citation importante dans le contexte du merge contraction et ordering : _As our preprocessing works in two phases (node ordering and contraction) there are preprocessing times like 0:28+0:09 for TCH based techniques (28 min node ordering and 9 min contraction)._
+
+
