@@ -33,6 +33,10 @@ Challenge de taille = dans un graphe time-dependent, utiliser un bidirectional d
 
 ----
 
+Local search :
+* lorqu'on contracte un node `v`, on s'intéresse à la question de savoir si supprimer v supprime des plus courts chemins, auquel cas il faut ajouter un shortcut
+* la *LOCAL SEARCH*, c'est cette phase de recherche des PCC (les witness-paths) entre les prédécesseurs et les successeurs de `v`
+
 Modification de la local search 1 :
 * on approxime les TTF utilisées lors des local searches par des bornes supérieures
 * ça va avoir tendance à surestimer le coût de ces TTF, et donc les chemins utilisant ces approximations vont moins avoir tendance à être de plus courts chemins (witnesses)
