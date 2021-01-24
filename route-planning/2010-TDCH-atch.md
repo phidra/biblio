@@ -71,7 +71,7 @@ NdM : dijkstra classique = applicable au problème du PLUS COURT CHEMIN, i.e. po
 
 ----
 
-Time-Dependent Dijkstra = généralisation de dijkstra au problème de l'EARLIEST ARRIVAL, i.e. pour un graphe TD
+**Time-Dependent Dijkstra** = généralisation de dijkstra au problème de l'EARLIEST ARRIVAL, i.e. pour un graphe TD
 * les valeurs associées aux noeuds ne sont plus des distances, mais des heures d'arrivée
 * lorsqu'on relaxe un edge (u,v), on prend en compte l'heure d'arrivée à u pour savoir quel poids ajouter à d(u) (en effet, celui-ci est une TTF)
 * en dijkstra classique, la nouvelle tentative_distance de v valait : min{d(v), d(u) + len(u,v)}
@@ -80,7 +80,7 @@ Time-Dependent Dijkstra = généralisation de dijkstra au problème de l'EARLIES
 
 ----
 
-Profile Search = renvoie le profil d'un itinéraire {s,t} (i.e. le temps de parcours de l'iti en fonction de l'heure de départ)
+**Profile Search** = renvoie le profil d'un itinéraire {s,t} (i.e. le temps de parcours de l'iti en fonction de l'heure de départ)
 * dans le dijkstra, au lieu que le label soit un scalaire représentant la plus petite distance (ou l'heure d'arrivée la plus tôt) au noeud, le label est une fonction dépendant du temps : à tout temps τ, elle associe l'heure d'arrivée la plus tôt (connue jusqu'ici) au noeud
 * en gros, on généralise le scalaire en une fonction dépendant du temps τ de departure_time depuis la source
 * pour relaxer un edge (u,v), on merge la TTF actuelle de v avec celle de la composition TTF(edge:u→v) ∘ TTF(u)
@@ -88,7 +88,7 @@ Profile Search = renvoie le profil d'un itinéraire {s,t} (i.e. le temps de parc
 
 ----
 
-Interval Search = même principe que ProfileSearch, mais ne travaille que sur les bornes inf/sup des TTFs, ce qui rend les calculs BEAUCOUP moins lourds
+**Interval Search** = même principe que ProfileSearch, mais ne travaille que sur les bornes inf/sup des TTFs, ce qui rend les calculs BEAUCOUP moins lourds
 * les labels utilisés dans dijkstra sont des 2-uple [inf, sup]
 * si un noeud N a pour label [inf, sup], on sait qu'on NE PEUT PAS atteindre ce noeud avant inf, et après sup
 * le label initial de chaque edge est [0,+∞]
@@ -98,7 +98,7 @@ Interval Search = même principe que ProfileSearch, mais ne travaille que sur le
 
 ----
 
-Corridor :
+**Corridor** :
 * sous-graphe du graphe contracté, dans lequel un iti de s à t est possible (donc : un corridor est propre à un iti {s,t})
 * l'intérêt d'un corridor est qu'il y a BEAUCOUP moins de noeuds que dans le graphe contracté initial
 * on peut donc y faire des recherches "exhaustives" (i.e. profile-search ou TD-dijkstra) de façon plus efficace
@@ -106,7 +106,7 @@ Corridor :
 
 ----
 
-Earliest Arrival queries on TCH :
+**Earliest Arrival queries on TCH** :
 * **step 1 = on fait un bidirectinal search modifié** :
     - forward search = TD-dijkstra
     - backward search = interval search
@@ -117,3 +117,74 @@ Earliest Arrival queries on TCH :
 * **step 2 = on relance un TD-dijkstra depuis CHAQUE candidate** (en initialisant son τ à la valeur donnée par le forward search)
     - détail crucial : ce TD-dijkstra est LIMITÉ aux nodes/edges du corridor (vu que seuls eux peuvent accueillir le plus court chemin)
     - QUESTION : quand décide-t-on qu'on a suffisamment de meeting-points ? Ou bien on ne fait la step2 que quand on a trouvé TOUS les meeting points possibles ?
+
+## Section 3 = Applying Approximations
+
+**Approximated TCH** :
+* étant donné un ε ∈ [O,1] (e.g. 0.05 = 5% d'erreur), on va approximer les TTF des shortcuts à ε près
+* on laisse les TTF des edges originaux (au moins pour un τ donné) inchangés
+* pour les autres TTFs (qui sont donc des TTF de shortcuts uniquement quel que soit le temps) on les remplace par une TTF upperbound f↑
+* cette TTF-upperbound f↑ est toujours supérieure ou égale à la TTF non-approximée f, mais n'est jamais supérieure de plus de ε
+* en revanche, elle peut la "lisser" et donc la simplifier : l'objectif est que f↑ soit beaucoup plus simple que f, et donc qu'on ait `|f↑| << |f|`
+* note : la TTF "jumelle" de f↑ qui sera la TTF-lowerbound f↓ est simplement le "miroir" de f↑ mais EN DESSOUS de f : f↓ = f↑ / (1+ε)
+* note bis : comme les TTF d'edges originaux ne sont pas approximées, on a toujours pour ces edges ε=0 soit f = f↓ = f↑
+* l'algo géométrique utilisé pour approximer les TTF minimise de façon optimale la complexité |f↑| pour un ε donné (les références sont dans le papier)
+* NdM : je vois l'Appproximated TTF comme l'application d'une érosion morphologique à une courbe (qui a tendance à la lisser)
+
+**Min-Max TCH** : un cas extrême d'Approximated TCH : où la TTF f est approximée par deux nombres : min(f) et max(f)
+
+**Arrival interval search** : C'est juste l'application d'un IntervalSearch à un Approximated graph dans le sens "classique", i.e. en partant de la source s
+
+**Backward Travel Time Interval Search** :
+* C'est l'application d'un IntervalSearch à un Approximated graph dans le sens "backward", i.e. en partant de la source t
+* le principe, c'est d'essayer de répondre à la question : "si j'arrive à t entre σ et σ', à quelle heure étais-je sur tel prédécesseur de t" ?
+* par exemple, pour un prédécesseur P de t, tel que P a pour Approximated-TTF [min=13, max=25], on peut rejoindre t en étant en P entre [min=σ-25 et max=σ'-13]
+    - NOTE : attention il faut soustraire au min le MAX du prédécesseur (et vice-versa)
+    - un moyen mnémotechnique = le min doit toujours rester inférieur au max, même si σ == σ'
+    - par ailleurs, on SOUSTRAIT des deux côtés, car dans les deux cas, on arrive en P *AVANT* d'arriver en t
+* en continuant le process pour un prédécesseur P2 de P, qui a pour A-TTF [min=5, max=18], on peut rejoindre t en étant en P2 entre [min=σ-43 et max=σ'-18]
+
+QUESTION : pas clair = ce que l'algo produit ? l'intervalle de temps (et les plus courts chemins possibles) pour aller d'un noeud sorce s à t ?
+* ma compréhension de ce que produit l'algo : pour chaque noeud v settled, l'algo indique l'intervalle de temps nécessaire pour faire le trajet entre v et t et arriver entre σ et σ'
+* dit autrement, si l'algo produit [min(v) ; max(v)], il nous permet d'affirmer : "pour arriver en t entre σ et σ', je n'aurais pas besoin de partir avant min(v), et je n'aurais pas le droit de partir après max(v)"
+* du coup il produit des informations sur un ENSEMBLE de noeuds (plutôt que sur un seul noeud source)
+* il sert dnoc plutôt à associer des labels à un jeu de noeuds settled, et pour chaque noeud à limiter les edges pouvant se trouver sur le plus court chemin (donc à calculer un corridor pour chaque noeud relaxé)
+* derrière, si parmi le jeu de noeuds relaxés on a des candiates trouvés par un forward-dijkstra, on peut restreindre un dijkstra exact au corridor calculé
+* (c'est pas entièrement clair la question de savoir si les edges du corridor font partie de ce que renvoie l'algo ou non)
+
+QUESTION : pas clair = la formule permettant de relaxer un edge :
+
+notations :
+* on s'intéresse à un edge (u,v), donc on peut parcourir l'edge de u à v
+* MAIS comme on s'intéresse à une propagation backward, on "part" de v pour faire le calcul en "remontant" vers u
+* pour simplifier, on suppose que u n'a jamais été visité
+* par ailleurs, v a pour labels [min(v) ; max(v)]  (dit autrement : pour rejoindre t depuis v entre σ et σ', il faut partir entre min(v) et max(v)]
+* comme précédemment, min(X) peut représenter :
+    - si X est un noeud : son label-min = l'heure à partir de laquelle il faut partir pour arriver en t entre σ et σ'
+    - si X est un edge : la valeur min de sa Approximated-TTF = le temps le plus petit possible nécessaire pour traverser l'edge (u,v)
+
+ma compréhension : u va se voir attribuer le label min(u) :
+* on prend le cas pessimiste de l'edge (u,v) où on met BEAUCOUP de temps pour le traverser, soit max(u,v)
+* dans ce cas, le plus petit label pour u est le plus petit label pour v auquel on soustrait la plus grande valeur (pessimiste) de l'edge (u,v)
+* dit autrement on va attribuer le label min : min(u) = min(v) - max(u,v)
+
+étape intermédiaire = autres billes pour comprendre la formule :
+* max (  depf↑uv (σ-qv)  )
+* depf↑uv (σ-qv)  = l'heure à laquelle il faut partir de u pour rejoindre v en (σ-qv), en considérant que le temps de trajet de u à v est la constante f↑uv = max(u,v)
+* du coup je comprends pas trop que vient faire "max" ici : depf↑uv (σ-qv) est DÉJÀ une valeur scalaire pour moi...
+* ah non pas forcément : f↑ n'est une constante QUE dans le cas d'une Min-Max TCH, et pas dans le cas d'une Approximated-TCH !
+
+du coup je reprends : billes pour comprendre la formule :
+* σ-qv l'heure de départ e v avant laquelle on est sûr d'arriver avant σ en t. Dit autrement, il NE FAUT PAS partir de v avant σ-qv si on veut rejoindre t après σ
+    - en effet, qv étant max(v), c'est l'hypothèse "pessimiste" selon laquelle on prendra le plus de temps possible pour faire le trajet
+    - en partant de v avant σ-qv, on est sûr d'arriver AVANT σ en t
+* depf↑uv (σ-qv)  = l'heure à laquelle il faut partir de u pour rejoindre v en (σ-qv) en considérant que le temps de trajet de u à v est donné par la TTF upper-approximée f↑uv 
+* max (  depf↑uv (σ-qv)  ) = la valeur max possible (donc optimiste sur le temps de trajet ?) de l'heure de départ de u sur toute la TTF upper-approximée f↑uv, pour rejoindre v en (σ-qv)
+* ----------------------------------------
+* σ'-pv l'heure après laquelle il ne faut pas partir de v si on veut être sûr de pouvoir rejoindre t avant σ'
+    - en effet, pv étant min(v), c'est l'hypothèse "optimiste" selon laquelle on prendra le moins de temps possible pour faire le trajet
+    - en partant de v après σ'-pv, on est sûr d'arriver APRÈS σ' en t
+* depf↓uv (σ'-pv) = l'heure à laquelle il faut partir de u pour rejoindre v en (σ'-pv) en considérant que le temps de trajet de u à v est donné par la TTF lower-approximée f↓uv 
+* min( depf↓uv (σ'-pv) ) = la valeur min possible (donc pessimiste sur le temps de trajet ?) de l'heure de départ de u sur toute la TTF lower-approximée f↓uv, pour rejoindre v en (σ'-pv)
+
+Bon, ça m'aide un peu à avancer, mais je n'ai toujours pas fini de comprends la formule...
