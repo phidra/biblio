@@ -120,7 +120,8 @@ NdM : dijkstra classique = applicable au problème du PLUS COURT CHEMIN, i.e. po
 
 ## Section 3 = Applying Approximations
 
-**Approximated TCH** :
+### Approximated TCH
+
 * étant donné un ε ∈ [O,1] (e.g. 0.05 = 5% d'erreur), on va approximer les TTF des shortcuts à ε près
 * on laisse les TTF des edges originaux (au moins pour un τ donné) inchangés
 * pour les autres TTFs (qui sont donc des TTF de shortcuts uniquement quel que soit le temps) on les remplace par une TTF upperbound f↑
@@ -131,11 +132,16 @@ NdM : dijkstra classique = applicable au problème du PLUS COURT CHEMIN, i.e. po
 * l'algo géométrique utilisé pour approximer les TTF minimise de façon optimale la complexité |f↑| pour un ε donné (les références sont dans le papier)
 * NdM : je vois l'Appproximated TTF comme l'application d'une érosion morphologique à une courbe (qui a tendance à la lisser)
 
-**Min-Max TCH** : un cas extrême d'Approximated TCH : où la TTF f est approximée par deux nombres : min(f) et max(f)
+### Min-Max TCH
 
-**Arrival interval search** : C'est juste l'application d'un IntervalSearch à un Approximated graph dans le sens "classique", i.e. en partant de la source s
+Un cas extrême d'Approximated TCH : où la TTF f est approximée par deux nombres : min(f) et max(f)
 
-**Backward Travel Time Interval Search** :
+### Arrival interval search
+
+C'est juste l'application d'un IntervalSearch à un Approximated graph dans le sens "classique", i.e. en partant de la source s
+
+### Backward Travel Time Interval Search
+
 * C'est l'application d'un IntervalSearch à un Approximated graph dans le sens "backward", i.e. en partant de la source t
 * le principe, c'est d'essayer de répondre à la question : "si j'arrive à t entre σ et σ', à quelle heure étais-je sur tel prédécesseur de t" ?
 * par exemple, pour un prédécesseur P de t, tel que P a pour Approximated-TTF [min=13, max=25], on peut rejoindre t en étant en P entre [min=σ-25 et max=σ'-13]
@@ -188,3 +194,89 @@ du coup je reprends : billes pour comprendre la formule :
 * min( depf↓uv (σ'-pv) ) = la valeur min possible (donc pessimiste sur le temps de trajet ?) de l'heure de départ de u sur toute la TTF lower-approximée f↓uv, pour rejoindre v en (σ'-pv)
 
 Bon, ça m'aide un peu à avancer, mais je n'ai toujours pas fini de comprends la formule...
+
+### Queries
+
+L'algo décrit est valable pour ATCH et min-max TCH
+
+Éléments en entrée :
+* un noeud source s
+* un noeud target t
+* un departure_time τ0
+
+#### phase 1 = bidirectional search / upward
+
+* search forward et backward, et dans les deux cas en "upward" (i.e. en ne considérant que les noeuds d'ordre supérieurs)
+* forward search = interval search à partir de s (de label initial [τ0;τ0]). Chaque noeud visité v a pour label [arrival_min;arrival_max] = la plage d'heures d'arrivée possibles.
+    - si v a pour label [τ0+145;τ0+196], ça veut dire qu'en partant de s à τ0, on est CERTAIN de ne pas arriver à v avant τ0+145 ni d'arriver après τ0+196
+* backward search = interval search depuis t (de label initial [0;0]). Chaque noeud visité v a pour label [travel_to_t_min;travel_to_t_max] = la plage de temps de parcours possibles.
+    - si v a pour label [145;196], ça veut dire que pour faire le chemin de v à t, on est CERTAIN qu'il ne faut pas moins de 145 et pas plus de 196 secondes
+* les meeting points des deux searchs sont les CANDIDATES
+
+QUESTION : c'est pas clair quand on arrête les search : dès qu'on a trouvé des candidates ? Dès qu'on a SETTLED tous les candidates ?
+
+QUESTION : d'ailleurs, dans un interval search, ça veut dire quoi SETTLE un candidate ? y a-t-il une priority queue en interval search et si oui, sur quoi porte-t-elle ?
+* dans un dijkstra classique, la priority queue porte sur la plus courte distance "actuellement connue" entre la source et le noeud v
+* dans un TD dijkstra, l'équivalent serait la notion de "plus court intervalle" entre la source et le noeud v
+* en gros, si un chemin permet de diminuer la borne inférieure (resp. sup) de l'intervalle, il faut mettre à jour l'intervalle et les edges du chemin "lower"
+* par contre, ça ne dit pas comment "classer" les noeuds dans la priority queue
+* en effet, dans un dijkstra classique, une fois qu'un noeud (ayant la plus petite priority) est dépilé, il est traité à jamais
+* alors que dans un TD-dijkstra, lorsqu'un noeud est dépilé, il se peut qu'on doive mettre à jour sa borne supérieure, car un plus court chemin permet d'arriver plus tard ?
+* hmm, en fait non : aussi bien la borne inférieure que la borne supérieure ne peuvent que DIMINUER (sinon c'est pas des plus courts chemins)
+* dans quel cas mettrait-on à jour la borne min d'un noeud v :
+    - c'est qu'on a trouvé un chemin (différent) qui permet d'arriver à v plus rapidement que celui qu'on avait jusqu'ici, en choisissant les poids OPTIMISTES
+    - dit autrement : en retenant le plus petit poids possible pour chaque edge, on a trouvé un meilleur chemin que celui qu'on avait jusqu'ici
+* dans quel cas mettrait-on à jour la borne max d'un noeud v :
+    - c'est qu'on a trouvé un chemin (différent) qui permet d'arriver à v plus rapidement que celui qu'on avait jusqu'ici, en choisissant les poids PESSIMISTES
+    - dit autrement : en retenant le plus grand poids possible pour chaque edge, on a trouvé un meilleur chemin que celui qu'on avait jusqu'ici
+* ma compréhension des choses : peu importe si on ordonne la priority queue par borne min ou borne max, car les noeuds ne sont JAMAIS settled
+* en effet, si on ordonne par poids optimistes (= borne min), même une fois un noeud dépilé, il se peut qu'on trouve un autre chemin plus court pour les poids pessimistes
+* D'après le code RE, pour une min-max TTF, on classe dans la priority queue en fonction de la borne min (et seulement en second temps par la borne max)
+* HUMM, en fait, on pourrait tout de même ordonner ?
+    - quand même avec les poids pessimistes, tous les noeuds non-visités ont un poids pessimiste plus grand que le mien je suis sûr que je ne vais plus améliorer mon PCC pessimiste ?
+    - EDIT : ben non : certes je ne vais plus améliorer mon poids pessimiste, mais je peux tout de même améliorer mon poids optimiste
+* Du coup, pour moi, la réponse à ma question : un noeud est SETTLED (i.e. n'évolue plus) lorque tous les noeuds restants à visiter ont à la fois :
+    - un poids OPTIMISTE plus grand que mon poids optimiste
+    - un poids PESSIMISTE plus grand que mon poids pessimiste
+
+In fine, à l'issue de cette première phase, tous les noeuds CANDIDATE c (i.e. visités à la fois par le forward search et le backward search) :
+* (forward)  ont un intervalle d'arrivée depuis s = [arrival_min ; arrival_max]
+* (backward) ont un intervalle de temps de parcours pour arriver à t = [travel_to_t_min;travel_to_t_max]
+* ça nous renseigne beaucoup sur la réponse finale recherchée = l'earliest arrival time à t en partant de s à τ0
+* l'arrival time à t en partant de s à τ0 (et en passant par c) est inclus dans l'intervalle : [arrival_min+travel_to_t_min ; arrival_max+travel_to_t_max]
+
+#### phase 2 = pour chaque candidate c, forward interval search, downward
+* l'objectif est de raffiner le backward search de la phase 1 (qui partait de t) en utilisant les infos que nous a apporté le forward search de la phase 1
+* en effet, on a maintenant plus d'infos sur les edges qui nous intéressent, vu qu'on sait qu'ils doivent être accessibles depuis c dans l'intervalle renvoyé par la phase 1
+* à partir de chaque candidate c, on fait un forward interval search :
+    -  on initialise les intervalles de chaque c à leur valeur renvoyée par la phase 1
+    -  le forward search n'utilise QUE les noeuds touchés par le backward search de la phase 1
+    -  de plus, ce forward search se contente de DESCENDRE les ordres (l'inverse de ce qui est fait d'habitude)
+* pourquoi un downward search ?
+    -  comme C est un meeting_point entre la recherche forward et backward, ce sera le point avec le plus haut ordering du trajet
+    -  du coup, comme le search de la phase 2 part de C pour rejoindre t, il faut nécessairement faire une recherche downward
+* à l'issue de cette phase, non seulement on a réduit le corridor entre les c et t mais on a également pour chaque c un intervalle d'arrivée [arrival_min;arrival_max] en t !
+
+#### phase 3 = backward interval search
+* ici aussi, l'objectif est de raffiner le backward search de la phase 1 (qui a déjà été raffiné à la phase2) pour limiter les edges concernés
+* on va utiliser la nouvelle information à notre disposition = on connaît maintenant un intervalle de temps d'arrivée en t [arrival_min;arrival_max]
+* on refait un interval search backward (et upward) qui part de t, avec comme valeurs initiales [arrival_min;arrival_max]
+* on se limite aux edges considérés comme intéressants dans la phase 2 (i.e. on ignore les edges qui ne peuvent pas faire partie d'un plus court chemin)
+* dès qu'on atteint un node qui était settled par le forward search de la phase 1, ce node est de nouveau un candidate c
+
+#### phase 4 = dijkstra bidirectionnel final, en utilisant les TTF réelles, et en se limitant aux edges intéressants
+
+en résumé :
+* la phase 1 forward a permis de définir un subset de noeuds et d'edges pouvant faire partie du plus court chemin pour rejoinder les candidates c
+* la phase 1 forward a (dit autrement) permis d'écarter certains edges/noeuds (ceux qui, quelle que soit l'heure, n'apparaissent pas dans le label des candidates)
+* la phase 1 backward, a permis de même d'écarter des edges/noeuds qui à coup sûr ne font partie des plus courts chemins entre les différents c et t
+* la phase 2 a permis de restreindre encore plus les edges potentiellement utiles entre les différents c et t.
+* la phase 3 a permis de restreindre ENCORE PLUS les edges potentiellement utiles entre les différents c et t, et de définir un nouveau set de candidates.
+
+À ce stade, on a donc fortement réduit le set d'edges pouvant faire partie d'un PCC entre s et c d'une part, et entre c et t d'autre part, on peut maintenant expand tous les raccourcis de ces edges (on a donc un corridor = un sous-graphe constitué d'edges originaux).
+
+Comme les raccourcis ont été expanded, le corridor ne contient que des edges originaux, qui ont une TTF EXACTE !
+
+On peut donc faire un TD-dijkstra bidirectionnel "normal" (ne visitant que les edges du corridor)  utilisant ces TTFs exactes pour trouver l'earliest arrival \o/
+
+À noter que les phase 2 et 3 sont en quelque sorte optionnelles, mais servent à réduire les edges potentiellement intéressants entre les différents c et t
