@@ -8,10 +8,8 @@ Pour faire une veille sur les sujets intéressants :
 
 # Papiers alléchants
 
-## route-planning
+## route-planning — road network
 
-- [Real-Time Movement Visualization of Public Transit Data](https://ad-publications.cs.uni-freiburg.de/SIGSPATIAL_Movement_Visualization_BBS_2014.pdf)
-- [TRAVIC: A Visualization Client for Public Transit Data](https://ad-publications.cs.uni-freiburg.de/SIGSPATIAL_TRAVIC_BBS_2014.pdf)
 - [Personalized Route Planning in Road Networks](https://ad-publications.cs.uni-freiburg.de/GIS_personal_FS_2015.pdf)
 - [Route Planning for Electric Vehicles: Taking Energy, Efficiency, Distance, and Reloading Opportunities into Account](https://ad-publications.cs.uni-freiburg.de/Route_planning_electric_vehicles_2015.pdf)
 - [CYCLOPS: CYCLe route options planning service](https://www.researchgate.net/publication/328947124_CYCLOPS_CYCLe_route_options_planning_service)
@@ -22,10 +20,8 @@ Pour faire une veille sur les sujets intéressants :
 - [Fast Exact Computation of Isochrones in Road Networks](https://www.researchgate.net/publication/303704824_Fast_Exact_Computation_of_Isochrones_in_Road_Networks)
 - [Determining alternative routes](https://www.researchgate.net/publication/302684371_Determining_alternative_routes)
 - [Finding near-optimal independent sets at scale](https://www.researchgate.net/publication/317756946_Finding_near-optimal_independent_sets_at_scale)
-- [Public Transit Labeling](https://www.researchgate.net/publication/275974379_Public_Transit_Labeling)
 - [Routing in Road Networks with Transit Nodes](https://www.researchgate.net/publication/303226449_Routing_in_Road_Networks_with_Transit_Nodes)
 - [Efficient Route Compression for Hybrid Route Planning](https://www.researchgate.net/publication/262321424_Efficient_Route_Compression_for_Hybrid_Route_Planning)
-- [Efficient Computation of Multi-Modal Public Transit Traffic Assignments using ULTRA](https://www.researchgate.net/publication/337230131_Efficient_Computation_of_Multi-Modal_Public_Transit_Traffic_Assignments_using_ULTRA)
 - [Efficient Computation of Jogging Routes](https://www.researchgate.net/publication/296671294_Efficient_Computation_of_Jogging_Routes)
 - [Search-space size in contraction hierarchies](https://www.researchgate.net/publication/305384929_Search-space_size_in_contraction_hierarchies)
 - [Space-efficient, Fast and Exact Routing in Time-dependent Road Networks](https://www.researchgate.net/publication/336868895_Space-efficient_Fast_and_Exact_Routing_in_Time-dependent_Road_Networks)
@@ -35,3 +31,11 @@ Pour faire une veille sur les sujets intéressants :
 - [Weight-Constrained Route Planning Over Time-Dependent Graphs](https://ieeexplore.ieee.org/abstract/document/8731574)
 - [Route planning for bicycles](https://www.researchgate.net/publication/285203978_Route_planning_for_bicycles_-_Exact_constrained_shortest_paths_made_practical_via_contraction_hierarchy)
 
+
+## route-planning — public transit network
+
+- [Real-Time Movement Visualization of Public Transit Data](https://ad-publications.cs.uni-freiburg.de/SIGSPATIAL_Movement_Visualization_BBS_2014.pdf)
+- [TRAVIC: A Visualization Client for Public Transit Data](https://ad-publications.cs.uni-freiburg.de/SIGSPATIAL_TRAVIC_BBS_2014.pdf)
+- [Public Transit Labeling](https://www.researchgate.net/publication/275974379_Public_Transit_Labeling)
+- [Efficient Computation of Multi-Modal Public Transit Traffic Assignments using ULTRA](https://www.researchgate.net/publication/337230131_Efficient_Computation_of_Multi-Modal_Public_Transit_Traffic_Assignments_using_ULTRA)
+- [Multi Objective Optimization of Multimodal Two-Way Roundtrip Journeys](https://easychair.org/publications/preprint_open/XVB8)

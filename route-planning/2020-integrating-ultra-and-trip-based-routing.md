@@ -12,7 +12,7 @@
 
 # Vidéo explicative
 
-Sur [la chaîne YouTube d'ALGO 2020](https://www.youtube.com/channel/UCBvRy0gXDEQaf_dl8UUAE7g), il y a une vidéo dédiée à ULTRA-TB : [lien](https://www.youtube.com/watch?v=40QXUYfLuQ4).
+Sur [la chaîne YouTube d'ALGO 2020](https://www.youtube.com/channel/UCBvRy0gXDEQaf_dl8UUAE7g), il y a une vidéo dédiée à ULTRA-TB : [ATMOS.3.2 Integrating ULTRA and Trip Based Routing](https://www.youtube.com/watch?v=40QXUYfLuQ4). Les slides présentés semblent être ceux-ci : [lien](https://i11www.iti.kit.edu/_media/members/tobias_zuendorf/ultratripbased.pdf), [copie locale](./LOCALCOPIES/ultratripbased.pdf) (md5sum=`cb6050842f998b4fed8affe653820024`).
 
 Notes en vrac à la consultation de la vidéo :
 
