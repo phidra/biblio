@@ -231,7 +231,7 @@ QUESTION : d'ailleurs, dans un interval search, ça veut dire quoi SETTLE un can
     - dit autrement : en retenant le plus grand poids possible pour chaque edge, on a trouvé un meilleur chemin que celui qu'on avait jusqu'ici
 * ma compréhension des choses : peu importe si on ordonne la priority queue par borne min ou borne max, car les noeuds ne sont JAMAIS settled
 * en effet, si on ordonne par poids optimistes (= borne min), même une fois un noeud dépilé, il se peut qu'on trouve un autre chemin plus court pour les poids pessimistes
-* D'après le code RE, pour une min-max TTF, on classe dans la priority queue en fonction de la borne min (et seulement en second temps par la borne max)
+* Dans le code, pour une min-max TTF, on classe dans la priority queue en fonction de la borne min (et seulement en second temps par la borne max)
 * HUMM, en fait, on pourrait tout de même ordonner ?
     - quand même avec les poids pessimistes, tous les noeuds non-visités ont un poids pessimiste plus grand que le mien je suis sûr que je ne vais plus améliorer mon PCC pessimiste ?
     - EDIT : ben non : certes je ne vais plus améliorer mon poids pessimiste, mais je peux tout de même améliorer mon poids optimiste
