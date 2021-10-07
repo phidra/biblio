@@ -127,7 +127,10 @@ Edge difference = (nombre d'edges dans le graphe APRÈS contraction de U) - (nom
 À noter qu'un critère dérivé semble être *New edges* = compter les nouveaux edges ajoutés au graphe par la contraction de U (mais d'après le papier, ce critère n'est pas intéressant, et ils l'ont ignoré).
 
 NOTE : j'ai pas creusé, mais on dirait que (en théorie), l'edge difference de TOUS les nodes (et pas uniquement des voisins de U) peuvent être affectés par la contraction de U.
+
 En théorie, après contraction de U, il faudrait recalculer le score d'ordering de tous les nodes du graphe. En pratique, ne recalculer que les voisins semble être une approximation acceptable. Le papier propose également de recalculer la prio de tous les nodes du graphes à certains moments clés. Une autre page sur laquelle j'étais tombé (que je ne retrouve plus) suggérait également de recalculer intégralement le score d'ordering de tous les nodes (plutôt que juste l'approximer par la mise à jour des voisins des nodes contractés) lorsqu'on a contracté la moitié des nodes.
+
+Mon hypothèse : parce que mettre à jour les voisins modifie leur score d'ordering, ce qui change du coup les shortcuts simulés de leurs propres voisins, et de proche en proche, partout ailleurs ? Idéalement, il faudrait que je forge des exemples concrets pour m'en convaincre.
 
 ### Catégorie 2 = Cost of Contraction
 
