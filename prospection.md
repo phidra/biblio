@@ -30,6 +30,10 @@ Pour faire une veille sur les sujets intéressants :
 - [Time-Dependent Route Planning for Truck Drivers](https://link.springer.com/chapter/10.1007/978-3-319-68496-3_8)
 - [Weight-Constrained Route Planning Over Time-Dependent Graphs](https://ieeexplore.ieee.org/abstract/document/8731574)
 - [Route planning for bicycles](https://www.researchgate.net/publication/285203978_Route_planning_for_bicycles_-_Exact_constrained_shortest_paths_made_practical_via_contraction_hierarchy)
+- [Polynomial-time Construction of Contraction Hierarchies for Multi-criteria Objectives](https://ad-publications.cs.uni-freiburg.de/ALENEX_multiCH_FS_2013.pdf), papier de 2013 pour faire du multi-critère avec les CH
+- [An Alternative Approach to Alternative Routes: HiDAR](https://link.springer.com/chapter/10.1007/978-3-642-40450-4_52), papier de 2013 pour calculer des routes alternatives de façon efficace
+- [Candidate Sets for Alternative Routes in Road Networks](https://i11www.iti.kit.edu/extra/publications/ls-csarr-12.pdf), papier de 2012 pour calculer des routes alternatives de façon efficace
+- [Contraction Hierarchies briefly explained](https://fmi.uni-stuttgart.de/files/alg/teaching/s15/alg/CH.pdf), un papier de 2017 résumant les CH
 
 
 ## route-planning — public transit network
