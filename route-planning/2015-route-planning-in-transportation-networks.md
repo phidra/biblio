@@ -2,7 +2,7 @@
 
 - **url** = [PDF](https://arxiv.org/pdf/1504.05140.pdf) (md5sum=`48e430f2e679428473c1529d96a5388b`), [copie locale](LOCALCOPIES/1504.05140.pdf)
 - **source** = c'est la mise à jour d'une [publication de recherche de Microsoft](https://www.microsoft.com/en-us/research/publication/route-planning-in-transportation-networks/)
-- **auteurs** = Hannah Bast, Daniel Delling, Andrew Goldberg, Matthias Müller-Hannemann, Thomas Pajor, Peter Sanders, Dorothea Wagner and Renato F. Werneck
+- **auteurs** = Hannah BAST, Daniel DELLING, Andrew GOLDBERG, Matthias MÜLLER-HANNEMANN, Thomas PAJOR, Peter SANDERS, Dorothea WAGNER and Renato F. WERNECK
 - **date de publication** = 2015
 - **date de rédaction initiale de ces notes** = 28 octobre 2020
 

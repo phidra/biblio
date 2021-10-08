@@ -670,6 +670,9 @@ Note ter : du coup, dans les backward-propagation, on peut ignorer les stalled-n
 
 **Optimisation** : la thèse mentionne une optimisation consistant à prune le backward-search pour avoir un bucket plus petit, elle semble décrite plus en détail sur le papier de 2007 dont est issue l'algo many-to-many = *Computing many-to-many shortest paths using highway hierarchies* ([lien](https://dl.acm.org/doi/10.5555/2791188.2791192), [PDF](https://dl.acm.org/doi/pdf/10.5555/2791188.2791192)).
 
+Une citation intéressante concernant Bucket-CH :
+
+> CHs are particularly well suited for many-to-many routing because they have very small search spaces and because for the backward search spaces we only need to store nodes that are not stalled.
 
 ## Chapitre 5 = Experiments
 
