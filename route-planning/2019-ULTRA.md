@@ -556,6 +556,8 @@ Le `N` en question est appelé `endOfPOIs`, et passé [à la construction de bas
 
 ### Bucket CH
 
+**EDIT octobre 2021 :** je ne corrige pas toutes ces notes, mais l'algo Bucket-CH est maintenant clair, j'explique comment il fonctionne dans mes notes sur [l'article original](./2007-bucket-ch-aka-computing-many-to-many-using-highway-hierarchies.md) et sur [le papier original CH](./2008-contraction-hierarchies.md). Le code d'ULTRA se comprend assez facilement derrière.
+
 À ce stade, j'ai une queryCH classique, qui a calculé la distance entre le vertex source (resp. target) et chaque vertex du graphe. De plus, certains vertex spéciaux (les POIs = les stops) sont marqués comme étant ou non atteignables depuis la source (resp. la target).
 
 
