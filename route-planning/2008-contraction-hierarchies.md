@@ -606,12 +606,12 @@ Note : attention à ne pas se mélanger les pinceaux : dans notre exemple, on ne
 
 
 **Application à mon illustration ci-dessus** :
-- comme en temps normal, la forward-propagation a relaxé `U` avec un coût depuis `S` à `100`
-- puis, toujours comme en temps normal, on settle également `X` avec un coût depuis `S` à `5`
-- plus tard, arrive le moment de settle `U`, qui a un coût de `100`
+- comme en temps normal, la forward-propagation a relaxé `X` avec un coût depuis `S` à `5`
+- puis, toujours comme en temps normal, on settle également `U` avec un coût depuis `S` à `100`
 - ce qui change : avant de relaxer les out-edges de `U`, on regarde **dans le graphe backward** les successeurs de `U` : on trouve `X`.
 - `X` a déjà été visité par la **forward**-propagation, et a un coût définitif depuis `S` de `5`. De plus, l'edge `XU` a un coût de `5` également, ce qui fait que depuis `S`, on peut rejoindre `U` (via `X`) avec un coût total de `10`.
 - comme `10 < 100`, c'est donc que le chemin direct `SU` par lequel la forward-propagation a pu rejoindre `U` n'était pas optimal -> il est inutile de continuer la propagation depuis `U`.
+- on ne relaxe donc **pas** les out-edges de `U` !
 - on peut donc settle un autre node (non-illustré sur le schéma), et la forward-propagation ne settlera jamais `K` ! C'est via la backward-propagation que `K` sera settled à sa vraie valeur.
 
 À noter qu'il y a un chapitre très détaillé sur le *stall-on-demand* à la page 219 de [la thèse TCH](./2014-TDCH-thesis.md).
