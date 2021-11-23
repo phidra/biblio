@@ -46,7 +46,7 @@
    * [Query](#query)
       * [Principe général](#principe-général-2)
       * [Notion à comprendre = le comportement à la query dépend de l'ordering](#notion-à-comprendre--le-comportement-à-la-query-dépend-de-lordering)
-      * [Mes réflexions au sujet du critère d'arrêt](#mes-réflexions-au-sujet-du-critère-darrêt)
+      * [Démonstration de la pertinence du critère d'arrêt spécifique aux CH](#démonstration-de-la-pertinence-du-critère-darrêt-spécifique-aux-ch)
       * [Path reconstruction](#path-reconstruction)
       * [Stall-on-demand](#stall-on-demand)
    * [Chapitre 4 = Applications](#chapitre-4--applications)
@@ -503,35 +503,86 @@ S   A   B   C   D   E   T
 
 (NdM : d'où l'importance de répartir uniformément la contraction sur tout le graphe : si tous les noeuds d'ordre élevés sont au même endroit, ça va pas aller)
 
-### Mes réflexions au sujet du critère d'arrêt
+### Démonstration de la pertinence du critère d'arrêt spécifique aux CH
 
-**TL;DR** : en gros, je ne suis pas encore tout à fait convaincu qu'on ne puisse pas arrêter le dijkstra dès qu'on a trouvé un meeting-node *en théorie*, mais ça paraît compliqué *en pratique*.
+~~**TL;DR** : en gros, malgré la figure 20 page 29, je ne suis pas encore tout à fait convaincu qu'on ne puisse pas arrêter le dijkstra dès qu'on a trouvé un meeting-node : on dirait qu'en itérant sur tous les successeurs des nodes déjà settled (comme dans un dijkstra bidir classique), ça pourrait passer, même si ce serait compliqué en pratique ?~~
 
-> abort the forward/backward search process when all keys in the respective priority queue are greater than the tentative shortest-path length (abort-on-success criterion). Note that we are not allowed to abort the entire query as soon as both search scopes meet for the first time.
+En fait, je suis convaincu, et je vais l'illustrer simplement à partir du graphe suivant :
 
-Section 3.5, figure 20, page 29 = exemple de cas illustrant qu'il ne faut pas arrêter le dijkstra dès qu'on a trouvé un meeting-node (comme on l'aurait fait sur un dijkstra bidir classique).
+```
+        5       5       5       1       5       5       5    
+     -------A-------B---------C---D---------E-------F--------
+    /                                                        \
+SOURCE                                                      TARGET
+    \   5       5       5       5       5       5       5    /
+     -------U-------V-------W-------X-------Y-------Z--------
 
-NdM : je suis pas encore tout à fait convaincu, on dirait qu'en itérant sur tous les successeurs des nodes déjà settled (comme dans un dijkstra bidir classique), ça pourrait passer ?
+```
 
-Hum, peut-être que c'est compliqué d'itérer sur les successeurs des nodes déjà settled (car il faut itérer sur leur successeurs ET prédecesseurs dans G↑ et G↓)
+Ce graphe particulier a les caractéristiques suivantes :
 
-Dans l'exemple donné en illustration en tout cas, à supposer que les arcs soient directionnels (s -> y -> t  ;  s -> x -> t) :
+- tous les edges sont de poids `5` sauf `C→D` de poids `1`
+- il existe deux chemins possibles pour aller de `SOURCE` à `TARGET`
+- ces deux chemins ont le même nombre d'edges, donc à cause du petit edge `C→D`, le plus court chemin de `SOURCE` à `TARGET` est **le chemin du haut** `ABCDEF`.
 
-Du point de vue de S :
-- y n'est pas un successeur de s dans le graphe forward (car y a un rank inférieur à s)
-- y n'est pas un prédecesseur de s dans le graphe forward (car l'arc est orienté s->y dans le graphe forward)
-- y **EST** un prédecesseur de s dans le graphe backward (car y a un rank inférieur à s ET l'arc va dans le bon sens dans le graphe backward)
-- y n'est pas un successeur de s dans le graphe backward (car l'arc est orienté y->s dans le graphe backward)
+Supposons qu'on ait l'ordering suivant :
 
-Du point de vue de T :
-- y n'est pas un successeur de t dans le graphe forward (car l'arc est orienté y->t dans le graphe forward)
-- y n'est pas un prédécesseur de t dans le graphe forward (car y a un rank supérieur à t)
-- y **EST** un successeur de t dans le graphe backward (car y a un rank supérieur à t ET l'arc va dans le bon sens dans le graphe backward)
-- y n'est pas un prédécesseur de t dans le graphe backward (car l'arc va dans le mauvais sens dans le graphe backward)
+```
+           (9)     (10)     (11) (12)     (13)    (14)
+     -------A-------B---------C---D---------E-------F--------
+    /                                                        \
+SOURCE (1)                                                  TARGET (2)
+    \      (3)     (5)     (8)     (7)     (6)     (4)       /
+     -------U-------V-------W-------X-------Y-------Z--------
 
-Du coup, j'ai quand même l'impression qu'en itérant sur tous les settled nodes, on pourrait trouver la liste des meeting-nodes en regardant leurs successeurs/prédécesseurs... Mais peut-être est-ce trop compliqué en pratique car il faudrait accéder aux prédécesseurs d'un node, ce qui n'est pas facile ?
+```
 
-De plus, vu que les noeuds settled par une query CH sont en log du nomber de noeuds, on n'a encore moins envie d'aller vers cette complexité.
+Cet ordering est linéaire sur le chemin du bas `UVWXYZ` (du coup, la backward propagation ne peut pas s'y propager plus loin que `Z`) et "correct" sur le chemin du haut `ABCDEF`.
+
+**Du point de vue du chemin du haut :**
+
+- La propagation forward settle successivement tous les noeuds, jusqu'au noeud final `F`, de rank maximal sur ce chemin.
+- La propagation backward ne settle que le premier noeud `F` sans pouvoir aller plus loin, car `F`a le rank maximal sur ce chemin.
+- Le meeting-node sur ce chemin sera `F`
+
+
+**Du point de vue du chemin du bas :**
+
+- La propagation forward settle successivement la moitié des noeuds jusqu'au noeud central `W`, de rank maximal sur ce chemin.
+- La propagation backward settle successivement l'autre moitié des noeuds, jusqu'au noeud central `W`, de rank maximal sur ce chemin.
+- Le meeting-node sur ce chemin sera `W`
+
+**Bidirectional propagation :**
+
+Avec ce graphe et cet ordering, et avec une bidir propagation qui alterne les sens, voici les noeuds settled par le calcul, et leur distance respective depuis `SOURCE` ou `TARGET` :
+
+- **FORWARD** A (distance from `SOURCE` = 5)
+- **BACKWARD** F (distance from `TARGET` = 5)  — à ce stade, la propagation backward abandonne le chemin du haut
+- **FORWARD** U (distance from `SOURCE` = 5)
+- **BACKWARD** Z (distance from `TARGET` = 5)
+- **FORWARD** B (distance from `SOURCE` = 10)
+- **BACKWARD** Y (distance from `TARGET` = 10)
+- **FORWARD** V (distance from `SOURCE` = 10)
+- **BACKWARD** X (distance from `TARGET` = 15)
+- **FORWARD** C (distance from `SOURCE` = 15)
+- **BACKWARD** W (distance from `TARGET` = 20)
+- **FORWARD** W (distance from `SOURCE` = 15) — un meeting node `W` est trouvé (mais ce n'est pas le bon), le chemin correspondant a pour poids `35`
+- **FORWARD** D (distance from `SOURCE` = 16)
+- **FORWARD** E (distance from `SOURCE` = 21)
+- **FORWARD** F (distance from `SOURCE` = 26) — le bon meeting node `F` est trouvé, le chemin correspondant a pour poids `31`, c'est bien le plus court chemin entre `SOURCE` et `TARGET`
+
+**Lien avec le critère d'arrêt d'une query CH :**
+
+- Le point important : le plus court chemin est le chemin du haut, de meeting-node `F`.
+- (le meeting-node sur le chemin du bas, `W`, ne correspond PAS au plus court-chemin)
+- pour que la query CH trouve le PCC, la forward propagation doit "avoir le temps" de rejoindre le bon meeting node `F`.
+- Or, vu l'ordering, ça nécessite que la forward propagation aille quasiment jusqu'à settle la `TARGET`.
+- À l'inverse le "mauvais" meeting-node `W` est trouvé beaucoup plus tôt dans la phase de query.
+- Du coup, si on arrête la propagation tôt (e.g. dès qu'un meeting node est trouvé), on ne laisse pas le temps à la forward propagation de trouver le bon meeting node `F`.
+
+La raison philosophique derrière tout ça, c'est qu'à cause des contraintes CH, la "répartition" des nodes du PCC entre "nodes settled par la propagation forward" et "nodes settled par la propagation backward" peut-être complètement asymétrique (comme c'est le cas ici).
+
+Du coup, le seul moment où on est sûr qu'il n'existe pas de chemin encore plus court que celui trouvé jusqu'ici, c'est quand les nœuds settled par la propagation forward (resp. backward) sont plus éloignés de la source (resp. target) que le meilleur chemin entre source et target trouvé jusqu'ici, ce qui est le critère d'arrêt qu'on cherchait à démontrer.
 
 ### Path reconstruction
 
