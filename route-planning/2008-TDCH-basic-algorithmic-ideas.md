@@ -16,13 +16,13 @@ Challenge de taille = dans un graphe time-dependent, utiliser un bidirectional d
 * deuxième version simple de l'ordering = ordering en se basant sur un petit subset des "morceaux" de la TTF
 * généralisation de dijkstra aux profils (i.e. au cas où, pour représenter son coût, on associe à un edge : un PROFIL dépendant du temps plutôt qu'un scalaire)
     + tentative_distance dans dijkstra est remplacé par TTF
-    + ajouter le coût d'une edge est remplacé par le linking d'une TTF
+    + ajouter le coût d'un edge est remplacé par le linking d'une TTF
     + prendre le minimum entre deux edges/chemins est remplacé par prendre le minimum des TTF
 
 ----
 
 * pas clair = pourquoi parle-t-il de `length` (dans time-dependent shortcut length) Mon interprétation = c'est une (mauvaise) façon de dire "le coût"
-* un shortcut est à garder lorsqu'À UN MOMENT DONNÉ il fait partie du plus court chemin (même principe que pour contraction CH sur un scalaire, mais appliquée à un time-dependant weight)
+* un shortcut est à garder lorsqu'À UN MOMENT QUELCONQUE DONNÉ il fait partie du plus court chemin (même principe que pour contraction CH sur un scalaire, mais appliquée à un time-dependant weight)
 * query CH = forward search sur un upward graph G↑ et downward search sur un downward graph G↓
 * pour TCH forward c'est à peu près identique à CH, sauf qu'il faut tenir compte de l'heure pour attribuer un poids à un edge
 * pour TCH backward c'est différent : on marque TOUS les nodes qui PEUVENT atteindre la target (sans doute le fameux corridor), puis on fait un disjktra classique entre les noeuds upwards trouvés, et les noeuds du corridor
