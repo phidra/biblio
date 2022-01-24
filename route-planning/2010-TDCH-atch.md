@@ -154,7 +154,7 @@ QUESTION : pas clair = ce que l'algo produit ? l'intervalle de temps (et les plu
 * ma compréhension de ce que produit l'algo : pour chaque noeud v settled, l'algo indique l'intervalle de temps nécessaire pour faire le trajet entre v et t et arriver entre σ et σ'
 * dit autrement, si l'algo produit [min(v) ; max(v)], il nous permet d'affirmer : "pour arriver en t entre σ et σ', je n'aurais pas besoin de partir avant min(v), et je n'aurais pas le droit de partir après max(v)"
 * du coup il produit des informations sur un ENSEMBLE de noeuds (plutôt que sur un seul noeud source)
-* il sert dnoc plutôt à associer des labels à un jeu de noeuds settled, et pour chaque noeud à limiter les edges pouvant se trouver sur le plus court chemin (donc à calculer un corridor pour chaque noeud relaxé)
+* il sert donc plutôt à associer des labels à un jeu de noeuds settled, et pour chaque noeud à limiter les edges pouvant se trouver sur le plus court chemin (donc à calculer un corridor pour chaque noeud relaxé)
 * derrière, si parmi le jeu de noeuds relaxés on a des candiates trouvés par un forward-dijkstra, on peut restreindre un dijkstra exact au corridor calculé
 * (c'est pas entièrement clair la question de savoir si les edges du corridor font partie de ce que renvoie l'algo ou non)
 
