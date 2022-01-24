@@ -122,7 +122,7 @@ NdM : dijkstra classique = applicable au problème du PLUS COURT CHEMIN, i.e. po
 
 ### Approximated TCH
 
-* étant donné un ε ∈ [O,1] (e.g. 0.05 = 5% d'erreur), on va approximer les TTF des shortcuts à ε près
+* étant donné un ε ∈ [0,1] (e.g. 0.05 = 5% d'erreur), on va approximer les TTF des shortcuts à ε près
 * on laisse les TTF des edges originaux (au moins pour un τ donné) inchangés
 * pour les autres TTFs (qui sont donc des TTF de shortcuts uniquement quel que soit le temps) on les remplace par une TTF upperbound f↑
 * cette TTF-upperbound f↑ est toujours supérieure ou égale à la TTF non-approximée f, mais n'est jamais supérieure de plus de ε
