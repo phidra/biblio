@@ -25,7 +25,7 @@ Challenge de taille = dans un graphe time-dependent, utiliser un bidirectional d
 * un shortcut est à garder lorsqu'À UN MOMENT QUELCONQUE DONNÉ il fait partie du plus court chemin (même principe que pour contraction CH sur un scalaire, mais appliquée à un time-dependant weight)
 * query CH = forward search sur un upward graph G↑ et downward search sur un downward graph G↓
 * pour TCH forward c'est à peu près identique à CH, sauf qu'il faut tenir compte de l'heure pour attribuer un poids à un edge
-* pour TCH backward c'est différent : on marque TOUS les nodes qui PEUVENT atteindre la target (sans doute le fameux corridor), puis on fait un disjktra classique entre les noeuds upwards trouvés, et les noeuds du corridor
+* pour TCH backward c'est différent : on marque TOUS les nodes qui PEUVENT atteindre la target (sans doute le fameux corridor — EDIT : c'est également à rapprocher du pré-calcul des buckets dans [le one-to-many avec bucket-CH](./2007-bucket-ch-aka-computing-many-to-many-using-highway-hierarchies.md)), puis on fait un disjktra classique entre les noeuds upwards trouvés, et les noeuds du corridor
 * problème = plus on compose des TTF, plus la complexité du profil résultant augmente...
     + e.g. profil d'un edge raccourci dont l'expansion comporte beaucoup d'edges réels
     + e.g. "tentative_distance" lors du dijkstra d'un noeud assez éloigné du noeud de départ (i.e. le diamètre du dijstra-search space est grand)
