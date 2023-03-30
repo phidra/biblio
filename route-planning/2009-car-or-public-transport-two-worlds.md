@@ -13,7 +13,7 @@
     - bidirectional search
     - hierarchy (e.g. highway hierarchies, mais n'inclut pas CH)
     - shortcuts / contraction (CH est ici)
-    - goal directed (A*, ALT, arcflags)
+    - goal directed (`A*`, ALT, arcflags)
     - distance tables (transit node)
 - pointe du doigt les différences entre RN et PTN qui font que ces tricks qui marchent bien sur RN ne marchent pas sur PTN :
     - différence n°1 = un PTN est déstructuré et n'a pas comme un RN de notion de hiérarchie -> les speed-up techniques qui s'appuient là-dessus ne marchent pas. Exemple : dans un PTN (au moins au niveau local, à l'échelle d'une ville), toutes les lignes de bus sont à peu près équivalentes, alors que sur un RN, les routes locales sont moins importantes que les nationales, elles-mêmes moins importantes que les autoroutes.

@@ -6,7 +6,17 @@
 - **date de publication** = 2012
 - **date de rédaction initiale de ces notes** = juin 2020
 
-**TL;DR** :
+* [(ARTICLE) Round-Based Public Transit Routing](#article-round-based-public-transit-routing)
+   * [TL;DR](#tldr)
+   * [Section 1 : Introduction](#section-1--introduction)
+   * [Section 2 : Preliminaries](#section-2--preliminaries)
+   * [Section 3 : RAPTOR](#section-3--raptor)
+   * [Section 4 : Extensions](#section-4--extensions)
+   * [Section 5 : Experiments](#section-5--experiments)
+   * [Notes sur le pseudo-code](#notes-sur-le-pseudo-code)
+
+## TL;DR
+
 * RAPTOR = algo de calcul d'itinéraire TC :
     - DATA = GTFS (lignes, horaires, transferts piétons)
     - INPUT = station de départ + heure de départ + station d'arrivée
@@ -29,7 +39,8 @@
     - l'algo fonctionne en rounds, et maintient pour chaque stop un earliest-arrival time ; tous sont initialisés à `+∞`
     - initialisation de l'algo = on met à jour le stop de départ, en settant son EAT au departure-time
     - on commence chaque round avec un set de stops marqués, i.e. de stops dont l'EAT a été amélioré au round précédent
-    - pour le round courant, on liste toutes les routes qui empruntent un stop précédemment marqué, et on met à jour les stops atteignables par ces routes
+    - pour le round courant, on liste toutes les routes qui empruntent un stop précédemment marqué
+    - pour chaque route, on recherche le trip le plus tôt de la route qu'on peut attraper, et on met à jour les stops atteignables par ces trips
     - (on met également à jour les stops joignable via un transfert piéton depuis un stop atteignables par ces routes)
     - si la mise à jour d'un stop améliore son EAT, on le marque pour le round suivant
     - au final, à chaque round k, on a le meilleur EAT auquel on peut atteindre chaque stop, en n'utilisant que k trips
@@ -45,8 +56,6 @@
     - rRAPTOR = extension de RAPTOR pour les range-queries (aussi appelées profile-queries dans d'autres papiers) = au lieu de prendre en input le datetime de départ, on prend en input un range de datetimes
 * les annexes donnent des précisions sur comment implémenter efficacement l'algo
 * pas directement relié au papier, mais voici [un post](https://ljn.io/posts/raptor-journey-planning-algorithm) vulgarisant RAPTOR, et donnant des corrections et alternatives (ce poste confirme l'erreur dans le papier sur la prise en compte des footpaths dans le pseudo-code)
-
-[[_TOC_]]
 
 ## Section 1 : Introduction
 
