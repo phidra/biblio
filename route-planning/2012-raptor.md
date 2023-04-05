@@ -12,6 +12,12 @@
    * [Section 2 : Preliminaries](#section-2--preliminaries)
    * [Section 3 : RAPTOR](#section-3--raptor)
    * [Section 4 : Extensions](#section-4--extensions)
+      * [mcRAPTOR](#mcraptor)
+      * [range-RAPTOR aka rRAPTOR](#range-raptor-aka-rraptor)
+         * [Définition du problème](#définition-du-problème)
+         * [Overview de l'algo](#overview-de-lalgo)
+         * [Astuce 1 sur les datetimes de départ](#astuce-1-sur-les-datetimes-de-départ)
+         * [Astuce 2 sur le self-pruning](#astuce-2-sur-le-self-pruning)
    * [Section 5 : Experiments](#section-5--experiments)
    * [Notes sur le pseudo-code](#notes-sur-le-pseudo-code)
 
@@ -182,9 +188,111 @@ le papier suggère en annexe des moyens d'implémentation efficace (accès en te
 
 ## Section 4 : Extensions
 
-Je n'ai fait que survoler :
-* mcRAPTOR = multi-criteria RAPTOR
-* rRAPTOR = range-RAPTOR
+Comme ces extensions sont utiles pour comprendre ULTRA (surtout rRAPTOR), ça vaut le coup de détailler un brin.
+
+Note bonus : aussi bien RAPTOR que McRAPTOR et rRAPTOR se parallélisent bien (chaque core peut traiter une route).:
+
+### mcRAPTOR
+
+Le problème résolu par McRAPTOR est différent du problème de base : il s'agit de renvoyer un front de Pareto à TROIS critères (ou plus) ; par exemple, ajouter le coût du trajet comme critère à optimiser, en plus de l'EAT et du nombre de correspondances.
+
+Principe :
+
+- On peut voir RAPTOR comme un algo qui fonctionne par round (donc qui permet naturellement de gérer le critère "nombre de correspondances") et qui optimise pour chaque round un unique critère = l'EAT comme fonction de coût.
+- Avec cette vision, à chaque round, chaque stop est labellisé par cet unique critère = le meilleur EAT possible pour ce stop pour le round courant.
+- Si au lieu de stocker un unique label par stop, on stocke un set de labels (= les ensembles non-dominés de l'EAT + du critère supplémentaire), on obtient un RAPTOR capable de gérer du multicritère.
+- (un peu de la même façon qu'un Dijkstra peut faire du multi-critère en stockant non plus uniquement la tentative distance, mais plutôt un bag de labels non-dominés)
+
+L'exemple dans le papier est donné avec les fare-zones :
+
+- les stops sont répartis en fare-zones = des cercles concentriques autour du centre de Paris
+- le prix du trajet est proportionnel au nombre de fare-zones touchées : un trajet qui "touche" une banlieue éloignée sera plus cher qu'un trajet dans Paris intra-muros
+- dans ce cas, McRAPTOR ajoute un critère aux labels des stops = le set non-ordonné des fare-zones touchées
+- on obtient un Pareto-set à trois critères -> on peut post-processer chaque résultat pour calculer le prix du trajet à partir du set de fare-zones
+
+### range-RAPTOR aka rRAPTOR
+
+#### Définition du problème
+
+**Inputs :**
+
+- stop de départ
+- stop d'arrivée
+- une plage horaire
+
+Sur la plage horaire considéré, on a N datetimes de départ possibles (e.g. sur la plage 10h00 → 10h20, on a 20x60 = 1200 datetimes de départ possibles)
+
+**Output =** pour chacune de ces 1200 secondes, on veut le Pareto-set des meilleurs trajets.
+
+En réalité, on n'a pas 1200 fronts de Pareto, puisque beaucoup de datetimes partagent le même Pareto-set. Exemple d'output :
+
+- entre 10h20 et 10h24, on a tel Pareto-set
+    - tous les itis de ce subrange partent à 10h24 ; en effet, si on arrive à la gare à 10h20... notre première tâche est d'attendre le TC qui part à 10h24 !
+- entre 10h24 et 10h31, on a tel autre Pareto-set
+- entre 10h31 et 10h40, on a encore un autre Pareto-set
+
+Une façon de voir les choses, c'est que sur les 1200 fronts de Pareto possibles, on considère que ceux qui partent plus tard dominent ceux qui partent plus tôt, si les autres critères sont identiques.
+
+#### Overview de l'algo
+
+Overview = itérer sur chaque datetime possible dans le reange, à rebours (i.e. en commençant par le plus tardif et en remontant de plus en plus tôt), et pour chacun, on fait un RAPTOR.
+
+On pourrait se dire que tous ces RAPTOR à faire, c'est démesuré, mais deux astuces font que ça marche très bien.
+
+#### Astuce 1 sur les datetimes de départ
+
+Comme on part d'un unique stop, tous les trips empruntés partiront de ce stop. On peut donc limiter les datetimes sur lesquels effectuer un RAPTOR aux quelques datetimes de départ des trips depuis ce stop appartenant au range.
+
+Exemple concret :
+
+- si on s'intéresse à la plage horaire de 10:00:00 à 10:20:00
+- même en supposant une très bonne fréquentation TC, avec TC qui passe par le stop de départ toutes les 5 minutes à 10:02 / 10:07 / 10:12 / 10:17 / 10:22
+- en partant du stop de départ à 10:20:00, on attrape le TC de 10:22 → on déroule le premier RAPTOR à partir de là
+- en remontant d'une seconde dans le passé, en partant à 10:19:50, on constate que le premier TC qu'on peut attraper reste le TC de 10:22 → on n'a pas amélioré le départ depuis le premier stop, donc inutile de dérouler ce RAPTOR
+- et ainsi de suite jusqu'à atteindre 10:17:00 = on skippe complètement la propagation de plein de RAPTORs, car le premier TC attrapé ne change pas
+- ce n'est que quand on atteind 10:17:00 qu'on arrête de skipper la propagation pour le premier stop
+- conclusion : on n'a que 5 datetimes de départ sur lesquels effectuer un RAPTOR
+- dit autrement : la première action de TOUS les autres datetimes de départ consisterait à attendre le départ du prochain trip → on peut se contenter de traiter uniquement les datetimes de départ des trips
+
+À noter qu'ULTRA généralisera ce principe de restreindre les datetimes utiles aux départs depuis des stops accessibles à pied depuis le stop de départ.
+
+#### Astuce 2 sur le self-pruning
+
+Au lieu de faire des RAPTORs successifs indépendamment les uns des autres, on garde pour un RAPTOR donné les labels des stops calculés par les RAPTORs précédents :
+
+- rappel sur RAPTOR : on maintient pour chaque stop du réseau TC un ensemble de labels `{nombre de correspondance ; heure d'arrivée}` non-dominés
+    - Par exemple, un stop `S` quelconque pourra être labellisé avec "on a pu atteindre `S` en 7 minutes et 1 correspondance ou en 10 minutes sans correspondance"
+- l'idée est de ne pas reset les labels de tous les stops du réseau TC entre deux RAPTORs successifs
+- si un RAPTOR précédent (donc _qui part plus tard_) a labellisé un stop quelconque du réseau `S` avec un Pareto-set de labels non-dominés
+- alors un RAPTOR exécuté après (donc _qui part plus tôt_) pourra utiliser ces labels pour pruner l'exploration du stop (i.e. ne pas le marquer comme "modifié" pour le round suivant)
+
+Exemple concret (je grossis le trait pour illustrer) :
+
+- supposons pour simplifier l'illustration qu'il n'y ait qu'un seul trajet physiquement possible entre départ et arrivée, avec deux lignes de TC et une correspondance entre les deux :
+    ```
+    L1 → correspondance → L2
+    ```
+- supposons que sur L1, pour notre range 10h00 → 10h15, on n'ait que deux trips possibles, doit deux datetimes de départ = `10h08` et `10h17`
+- supposons que d'une façon générale, la fréquence de passage sur L2 soit toutes les demi-heures, p.ex. 10h00 / 10h30 / 11h00
+- alors il n'y a que deux trajets possibles sur tous le range, qui sont :
+    - premier trajet :
+        - prendre L1 à 10h08
+        - descendre à la correspondance à 10h18
+        - prendre L2 à 10h30
+        - descendre à l'arrive à 10h40
+    - second trajet :
+        - prendre L1 à 10h17
+        - descendre à la correspondance à 10h27
+        - prendre L2 à 10h30
+        - descendre à l'arrive à 10h40
+- les deux trajets ont le même Pareto-score (même heure d'arrivée, même nombre de correspondances) → le trajet qui part plus tôt est dominé par le trajet qui part plus tard.
+
+Comment fonctionne le self-pruning pour cet exemple :
+
+- le RAPTOR exécuté en premier est celui qui part _le plus tard_ donc à 10h17
+- l'exécution de ce RAPTOR va labelliser le stop où on rentre dans L2 (le stop de correspondance) comme "au plus tôt, avec une correspondance, je peux entrer dans L2 à 10h30"
+- lorsque le deuxième RAPTOR (qui part _plus tôt_, à 10h08) s'exécute, il voudrait labelliser ce stop en "avec une correspondance, je peux entrer dans L2 à 10h30"
+- comme ce label n'améliore PAS le label déjà existant (celui setté par le premier RAPTOR), on s'arrête là : inutile de marquer ce stop pour le round suivant, on l'a _pruné_
 
 ## Section 5 : Experiments
 

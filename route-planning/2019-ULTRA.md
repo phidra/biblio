@@ -10,7 +10,10 @@
 **TL;DR** = still to do
 
 * [(ARTICLE) UnLimited TRAnsfers for Multi-Modal Route Planning: An Efficient Solution](#article-unlimited-transfers-for-multi-modal-route-planning-an-efficient-solution)
-   * [Section 1 : Introduction](#section-1--introduction)
+   * [Notes sur l'algorithme](#notes-sur-lalgorithme)
+      * [Ce qu'apporte ULTRA](#ce-quapporte-ultra)
+      * [Overview](#overview)
+      * [Brique de base = Core-CH](#brique-de-base--core-ch)
 * [Notes d'analyse du code](#notes-danalyse-du-code)
    * [Vrac](#vrac)
    * [Données binaires en entrée du pipeline](#données-binaires-en-entrée-du-pipeline)
@@ -38,10 +41,63 @@
       * [Utilisation de initialTransfers par ULTRARAPTOR](#utilisation-de-initialtransfers-par-ultraraptor)
       * [In fine, comment reconstruire le chemin](#in-fine-comment-reconstruire-le-chemin)
 
-## Section 1 : Introduction
+## Notes sur l'algorithme
 
-FIXME : notes à prendre.
+### Ce qu'apporte ULTRA
 
+Quelle est la place d'ULTRA :
+
+- **Dijkstra / CH** = permet de calculer le PCC sur un RN
+- **RAPTOR** = permet de calculer le PCC sur un PTN :
+   - limite n°1 = uniquement d'un stop à un stop (plutôt qu'entre deux vertex quelconques)
+   - limite n°2 = transferts piétons limités à ceux qui sont hardcodés dans la donnée
+- **One-to-many** = permet de calculer le PCC entre deux vertex quelconque
+- **ULTRA** = permet de calculer le PCC sans limiter les transferts piétons ; utilise les briques de bases :
+   - **Core-CH**
+   - **rRAPTOR**
+
+ULTRA permet donc d'adresser la question des transferts piétons en cours de trajets :
+
+> ULTRA computes a small number of transfer shortcuts that are provably sufficient for computing a Pareto set of optimal journeys. These transfer shortcuts can be integrated into a variety of state-of-the-art public transit algorithms.
+
+### Overview
+
+TODO
+
+### Brique de base = Core-CH
+
+Core-CH est une variante de CH où on ne contracte pas le graphe jusqu'au bout :
+
+- sur le graphe piéton original, on ranke les vertex correspondants aux stops TC en haut de la hiérarchie
+- on contracte le graphe normalement...
+- ... mais on arrête la contraction AVANT de contracter les derniers vertex (i.e. les stops)
+- le graphe résultant, partiellement contracté, ne contient plus que les stops, et les edges (originaux ou shortcuts) qui les relient
+
+Les shortcuts que le preprocess ULTRA va calculer sont **un subset** du core-graph (plus précisement, c'est le subset indispensable pour préserver les plus courts chemins parmi tous les trajets TC + unrestricted-walking possibles).
+
+**Critère d'arrêt de la contraction :**
+
+En réalité, on arrête la contraction plus tôt :
+
+> In practice, the contraction process is therefore stopped once the average vertex degree in the core graph surpasses a specified limit.
+
+Pourquoi ? Parce que si on n'avait QUE les vertex des stops dans le core-graph, pour un stop donné, on devrait créer un shortcut en direction de tous les autres stops, et on se retrouverait donc avec `N*N-1` shortcuts.
+
+En effet, pour ne PAS avoir à créer un shortcut entre un stop `S1` et un stop `S2`, il faudrait que l'un des autres stops `Sx` soit sur le PCC entre `S1` et `S2`, ce qui est improbable ou rare...
+
+Du coup, en pratique, pour éviter que `|E|` soit en `|stops|²`, on se débrouille pour que le core-graph comporte un peu plus de vertex que "juste les stops" (mais quand même pas trop) ; pour cela, on utilise l'heuristique de capper le degré moyen des noeuds du graphe.
+
+NDM : ma compréhension, c'est que ces stops "additionnels" sont sur beaucoup de PCC, et donc permettent de "mutualiser" des shortcuts ; ils agissent comme des hubs. Pour illustrer, prenons le cas extrême ou un unique vertex `hub` contribuerait à TOUS les PCC entre tous les stops, si on se contente d'avoir un core-graph contenant tous les stops + ce `hub`, on passe d'un nombre d'edges en `N²` (chaque stop a `N-1` edges vers chaque autre stop) à un nombre d'edges en `N` (chaque stop a un unique edge vers le `hub`).
+
+NDM : si on veut naviguer de stop à stop, sur le core-graph, il n'est pas indispensable de faire un bidir-dijkstra comme ça l'est pour un graphe CH complètement contracté. En effet, comme aucun stop n'a été contracté, tous les stops sont encore présents dans le graphe, un Dijkstra simple sur le core-graph pourra donc les rejoindre. Cette propriété nous intéresse, car ça facilite le fait d'arrêter tôt une forward-propagation Dijkstra, par exemple si le temps nécessaire à rejoindre les stops restants devient trop élevé pour nous intéresser.
+
+### Brique de base = rRAPTOR
+
+cf. [mes notes sur le sujet](./2012-raptor.md)
+
+### Brique de base = Core-CH
+
+TODO
 
 # Notes d'analyse du code
 
