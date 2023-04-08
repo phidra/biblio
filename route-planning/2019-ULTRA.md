@@ -7,13 +7,19 @@
 - **date de rédaction initiale de ces notes** = 6 janvier 2021
 - **code** = [ULTRA](https://github.com/kit-algo/ULTRA/), sur [le repo du KIT](https://github.com/kit-algo/)
 
-**TL;DR** = still to do
+**TL;DR** = ULTRA permet l'unrestricted-walking pour les transferts piétons en cours de trajet (les sections piétonnes au départ ou à l'arrivée étant plutôt gérées par Bucket-CH) ; dans une phase de preprocess, ULTRA calcule un graphe piéton très simplifié car ne contenant que les shortcuts piétons indispensables à la préservation des plus courts chemins.
 
 * [(ARTICLE) UnLimited TRAnsfers for Multi-Modal Route Planning: An Efficient Solution](#article-unlimited-transfers-for-multi-modal-route-planning-an-efficient-solution)
    * [Notes sur l'algorithme](#notes-sur-lalgorithme)
       * [Ce qu'apporte ULTRA](#ce-quapporte-ultra)
       * [Overview](#overview)
       * [Brique de base = Core-CH](#brique-de-base--core-ch)
+      * [Brique de base = rRAPTOR](#brique-de-base--rraptor)
+      * [Calcul des shortcuts ULTRA](#calcul-des-shortcuts-ultra)
+         * [Terminologie](#terminologie)
+         * [Principe](#principe)
+         * [Tiebreaking sequence](#tiebreaking-sequence)
+         * [Restriction du rRAPTOR et witness journeys](#restriction-du-rraptor-et-witness-journeys)
 * [Notes d'analyse du code](#notes-danalyse-du-code)
    * [Vrac](#vrac)
    * [Données binaires en entrée du pipeline](#données-binaires-en-entrée-du-pipeline)
@@ -62,7 +68,13 @@ ULTRA permet donc d'adresser la question des transferts piétons en cours de tra
 
 ### Overview
 
-TODO
+En deux mots, on ajoute une phase de preprocess pour calculer des shortcuts piétons qui remplaceront les footpaths hardcodés :
+
+- un premier preprocess (Core-CH) calcule un core-graph du graphe piéton
+- un second preprocess (ULTRA) calcule le subset du core-graph piéton qu'il est indispensable de pouvoir utiliser pour conserver tous les plus courts chemins sur le réseau TC
+- les shortcuts ULTRA sont ce subset du core-graph piéton
+- ils seront utilisés dans un algo "classique" type RAPTOR, en remplacement des footpaths hardcodés en cours de trajet
+- les shortcuts ULTRA ne concernent que les transferts **en cours de trajet** : l'unrestricted-walking au départ ou à l'arrivée est obtenu en utilisant plutôt un algo one-to-many tel que Bucket-CH
 
 ### Brique de base = Core-CH
 
@@ -72,6 +84,10 @@ Core-CH est une variante de CH où on ne contracte pas le graphe jusqu'au bout :
 - on contracte le graphe normalement...
 - ... mais on arrête la contraction AVANT de contracter les derniers vertex (i.e. les stops)
 - le graphe résultant, partiellement contracté, ne contient plus que les stops, et les edges (originaux ou shortcuts) qui les relient
+
+Comme le graphe est simplifié, on peut plus facilement faire un Dijkstra dessus pour relaxer les transferts piétons entre deux rounds de RAPTOR (plutôt que d'utiliser les transferts hardcodés). C'est ce que fait `MR-∞` ; ma compréhension, est que c'est plus rapide que de relaxer les transferts avec un Dijkstra sur le graphe piéton original, mais que ça ne nous suffit pas : ULTRA veut pousser plus loin en extrayant le sous-graphe indispensable, et en dégageant tout le reste.
+
+NDM : l'intérêt n'est pas tant de calculer des itis plus rapidement (ce que Core-CH peut certes faire, mais qu'un CH classique peut faire aussi), mais surtout d'obtenir un graphe simplifié, dont on va extraire un subset.
 
 Les shortcuts que le preprocess ULTRA va calculer sont **un subset** du core-graph (plus précisement, c'est le subset indispensable pour préserver les plus courts chemins parmi tous les trajets TC + unrestricted-walking possibles).
 
@@ -95,13 +111,105 @@ NDM : si on veut naviguer de stop à stop, sur le core-graph, il n'est pas indis
 
 cf. [mes notes sur le sujet](./2012-raptor.md)
 
-### Brique de base = Core-CH
+### Calcul des shortcuts ULTRA
 
-TODO
+#### Terminologie
+
+- `STOPS` = les endroits où on peut monter ou descendre d'un TC
+- `TRIP` = un trajet d'un TC en particulier : tel RER qui part de Saint-Rémy-Lès-Chevreuse à 14h17, et qui passe par ces 37 arrêts à telles heures précises
+- `TRIP SEGMENT` = un trip partiel = un morceau d'un trip : je suis monté dans le RER (qui partait de Saint-Rémy à 14h17) à Massy à 14h35 et j'en suis descendu à Saint-Michel à 15h01
+- `ROUTE` = l'ensemble des trips qui sont identiques en tout point (sauf leurs horaires) = l'ensemble des RER qui font exactement le même parcours à différentes heures de la journée (note que si deux RER ne s'arrêtent pas aux mêmes arrêts, p.ex. parce que l'un est direct et l'autre omnibus, alors ils n'appartiennent pas à la même route)
+- `TRANSFER GRAPH` = graphe piéton (ou autre moyen de transport) permettant de rejoindre un stop, ou de faire un transfert entre deux stops
+- `JOURNEY` = le trajet d'un utilisateur au sens large, qui peut inclure :
+    - un morceau piéton initial pour rejoindre un stop depuis son point de départ
+    - un trip TC
+    - (éventuellement, un transfert entre deux TC, et d'autres trips TC)
+    - un morceau piéton final pour rejoindre son point d'arrivée depuis le stop final
+- `DOMINÉ` = un journey `J1` domine un autre journey `J2` si `J1` est meilleur que `J2` sur au moins un critère, et `J1` n'est pas moins bon que `J2` sur aucun critère. Un trajet dominé n'est jamais intéressant. Les deux critères utilisés sont :
+    - critère 1 = EAT = datetime d'arrivée = `τarr(J)`
+    - critère 2 = nombre de trips équivalent à nombre de correspondances = `|J|`
+- `PARETO-OPTIMAL` = un iti est Pareto-optimal s'il n'est pas dominé
+
+#### Principe
+
+Le principe de base est de calculer tous les trajets "élémentaires" (le papier montre qu'ils sont une base génératrice de tous les journeys possibles) qu'on appelle les **candidate journeys** = un trajet sans section piétonne au départ/arrivée, et constitué d'exactement deux trips séparés par un transfert piéton :
+
+```
+candidate journey = {trip1 → transfert piéton → trip2}
+```
+
+De plus, les transferts piétons utilisés sont calculés sur le core-graph piéton sans se limiter (plutôt que grâce aux transferts piétons hardcodés dans la donnée)
+
+Parmi tous ces trajets élémentaires, certains sont dominés par des **witness journeys**.
+
+Pour les autres = les _candidate journeys_ qui ne sont pas dominés ; leurs trajets piétons sont nécessaires à la préservation des plus courts chemins → ils constituent les shortcuts ULTRA.
+
+Avec une approche naïve, pour chaque datetime possible et pour chaque stop du réseau TC, on lance un RAPTOR limité à deux rounds.
+
+L'approche ULTRA utilise plein de techniques pour que ce preprocess soit plus efficace, mais sur le principe, pour chaque stop du réseau TC, on lance un rRAPTOR qui part de ce stop :
+
+- à destination de tous les autres stops du réseau TC
+- pour toute la plage horaire possible
+- limité à deux rounds
+- qui relaxe les transferts piétons entre le round 1 et 2 grâce au core-graph piéton
+- sans trajet piéton au départ/arrivée (_sauf pour les witness journeys, cf. plus bas_)
+
+Pour chaque stop de destination, les footpaths des trajets non-dominés sont les shortcuts ULTRA.
+
+#### Tiebreaking sequence
+
+L'article détaille longuement la **tiebreaking sequence** = un moyen de départager de façon déterministe plusieurs itis Pareto-optimal équivalents, i.e. qui ont le même :
+
+- nombre de correspondances
+- heure d'arrivée
+
+L'idée est de remplacer le critère d'EAT (qui permet d'ordonner les itis, mais en autorisant des égalités si deux itis arrivent exactement à la même heure) par la tiebreaking-sequence.
+
+Elle ordonne les itis prioritairement par EAT (donc elle est compatible avec l'EAT) mais ordonne les itis ayant même EAT d'une façon déterministe, de sorte que deux itis ayant même EAT n'auront jamais la même tiebreaking sequence : l'un sera forcément "meilleur" que l'autre.
+
+On peut donc utiliser la tiebreaking sequence comme critère à optimiser par RAPTOR en remplacement de l'EAT. Les itis sur le front de Pareto qui utilisent ce critère sont les **canonical journeys**.
+
+#### Restriction du rRAPTOR et witness journeys
+
+Pour la recherche des candidate journeys non-dominés, on veut un rRAPTOR qui part exactement du stop, sans autoriser un transfert piéton au départ.
+
+MAIS pour la recherche des witness journeys, on a le droit de rejoindre d'autres stops à pied pour démarrer le trajet ! Du coup, pour chaque stop du réseau TC, on lance un on veut un rRAPTOR :
+
+- modifié pour utiliser la tiebreaking-sequence (ça a un impact sur la façon dont on dépile les routes à traiter + sur la façon dont on ordonne les vertex dans la priority queue du Dijkstra qui relaxe les transferts piétons)
+- à destination de tous les autres stops du réseau TC
+- pour toute la plage horaire possible
+- limité à deux rounds
+- qui relaxe les transferts piétons entre le round 1 et 2 grâce au core-graph piéton
+- sans trajet piéton au départ/arrivée pour les candidate journeys...
+- ...avec trajet piéton au départ/arrivée pour les witness journeys
+
+Un point important est de trouver les datetimes de départ auxquels sera limité le rRAPTOR :
+
+- dans un rRAPTOR classique, on limite déjà les datetimes aux heures exacts des trips (c'est ce qui fait que sur une plage de 20 min, on peut n'avoir que 4 RAPTOR à lancer)
+- à supposer qu'on ait deux trips successifs `T1` et `T2` qui partent du stop de départ `Sdépart`, et qu'on s'intéresse au RAPTOR du trip `T1`...
+- ... quels trips depuis les **autres** stops `Sx` va-t-on utiliser pour la recherche des witness journeys ?
+- réponse = on veut les trips partant des stops `Sx` qu'on a le temps rejoindre à pied entre le moment où `T1` part et où `T2` part
+- l'idée est que les witness journeys partant après `T2` ont déjà été explorés par un précédent RAPTOR (celui lancé lorsqu'on traitait `T1`).
+- (et pour que ça marche, le tout premier RAPTOR lancé doit sans doute s'intéresser à tous les witness journeys possibles, non-limités, donc y compris avec beaucoup de marche à pied)
+
+En résumé :
+
+- il faut rechercher les witness aussi, qui partent de n'importe quels autres stops `Sx` (et pas uniquement les candidates qui partent de `Sdépart`)
+- on simule un départ des autres stops en utilisant le temps de transfert piéton entre `Sdépart` et les autres stops
+- ma compréhension, c'est que le premier run sera un peu long (on regarde toutes les routes sur tous les stops)
+    - note que très vite, certains seront dominés avant même de commencer
+    - si je pars du métro 14 à chatelet, mon premier trip me fait arriver en 7 minutes à Bercy-Village
+    - alors que le transfert piéton de Chatelet à Bercy-Village mets plus de 50 minutes
+    - les trips accessibles depuis "Bercy-Village à pied" sont déjà prunés
+    - du coup, si je m'assure d'avoir déroulé un premier RAPTOR pour les candidate journeys avant de m'intéresser aux witness journeys non-limités...
+    - ... la plupart des départs éloignés de beaucoup de marche à pied seront vite prunés
+- même si le premier run est un peu long, les suivants seront plus rapides, car peu de stations sont accessibles à pied dans l'intervalle entre deux trips
+
+**Note** : il y a encore beaucoup d'optimisations, de détails, et de preuves dans le papier.
 
 # Notes d'analyse du code
 
-**DISCLAIMER** : ces notes sont des notes très très vrac, assez bordéliques, et à prendre avec des pincettes.
+**DISCLAIMER** : ces notes sont des notes très très vrac, assez bordéliques, et à prendre avec des pincettes car elles datent d'avant ma compréhension de l'algo et de ses briques de base.
 
 ## Vrac
 
